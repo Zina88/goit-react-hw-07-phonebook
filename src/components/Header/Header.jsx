@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { BsFillPersonPlusFill } from 'react-icons/bs';
-import Modal from 'components/Modal';
-import ContactForm from 'components/ContactForm';
-import css from './Header.module.css';
+import { useState } from "react";
+import { BsFillPersonPlusFill } from "react-icons/bs";
+import Modal from "components/Modal";
+import ContactForm from "components/ContactForm";
+import css from "./Header.module.css";
 
 export default function Header() {
   const [showModal, setShowModal] = useState(false);
@@ -27,4 +27,3 @@ export default function Header() {
     </>
   );
 }
-

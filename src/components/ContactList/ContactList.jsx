@@ -1,33 +1,43 @@
-import { useSelector, useDispatch } from 'react-redux';
-import { deleteContact, getFilter, getContacts } from 'redux/contactSlice';
-import Contact from 'components/Contact';
-import css from './ContactList.module.css';
+import {
+  useGetContactsQuery,
+  useDeleteContactMutation,
+} from "redux/contactsApi";
+import css from "./ContactList.module.css";
+import { FaTrash, FaUserAlt } from "react-icons/fa";
+import { getFilter } from "redux/selectors";
+import { useSelector } from "react-redux";
+import { nanoid } from "nanoid";
 
 const ContactList = () => {
-  const filter = useSelector(getFilter);
-  const contacts = useSelector(getContacts);
+  const { data: contacts } = useGetContactsQuery();
+  const [deleteContact, { isLoading }] = useDeleteContactMutation();
 
-  const dispatch = useDispatch();
-
-  const deleteSelectedContact = contactId => dispatch(deleteContact(contactId));
+  const { filter } = useSelector(state => getFilter(state));
 
   const filtredContacts = () => {
     const normalizedFilter = filter.toLowerCase();
-    return contacts.filter(contact => contact.name.toLowerCase().includes(normalizedFilter));
+    return (
+      contacts &&
+      contacts.filter(contact =>
+        contact.name.toLowerCase().includes(normalizedFilter)
+      )
+    );
   };
 
   const filteredContactList = filtredContacts();
 
   return (
     <ul className={css.contactList}>
-      {filteredContactList.map(({ id, name, number }) => (
-        <li key={id} className={css.contactItem}>
-          <Contact
-            name={name}
-            number={number}
-            onDeleteContact={() => deleteSelectedContact(id)}
-            contactId={id}
-          />
+      {filteredContactList.map(({ id, name, phone }) => (
+        <li key={nanoid()} className={css.contactItem}>
+          <FaUserAlt className={css.contactLogo} />
+          <p className={css.contactName}>{name}</p>
+          <p className={css.contactPhone}>{phone}</p>
+          <FaTrash
+            className={css.delIcon}
+            onClick={() => deleteContact(id)}
+            disabled={isLoading}
+          ></FaTrash>
         </li>
       ))}
     </ul>

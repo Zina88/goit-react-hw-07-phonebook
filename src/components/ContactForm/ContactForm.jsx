@@ -1,71 +1,73 @@
-import React, { useState } from 'react';
-import PropTypes from 'prop-types';
-import { nanoid } from 'nanoid';
-import { Report } from 'notiflix/build/notiflix-report-aio';
-import css from './ContactForm.module.css';
-import { useSelector, useDispatch } from 'react-redux';
-import { addContact, getContacts } from 'redux/contactSlice';
+import { useAddContactMutation, useGetContactsQuery } from "redux/contactsApi";
+import PropTypes from "prop-types";
+import { Formik, Form, Field, ErrorMessage } from "formik";
+import * as yup from "yup";
+import { Report } from "notiflix/build/notiflix-report-aio";
+import { Notify } from "notiflix/build/notiflix-notify-aio";
+import css from "./ContactForm.module.css";
 
 export default function ContactForm({ onClose }) {
-  const [name, setName] = useState('');
-  const [number, setNumber] = useState('');
+  const [createContact] = useAddContactMutation();
+  const { data: contacts } = useGetContactsQuery();
 
-  const onChangeName = e => setName(e.currentTarget.value);
-  const onChangeNumber = e => setNumber(e.currentTarget.value);
-
-  const contacts = useSelector(getContacts);
-  const dispatch = useDispatch();
-
-  const handleSubmit = e => {
-    e.preventDefault();
-
-    const newElement = { id: nanoid(), name, number };
-
-    contacts.some(contact => contact.name === name)
-      ? Report.warning(`${name}`, 'This user is already in the contact list.', 'OK')
-      : dispatch(addContact(newElement));
-
-    reset();
-    onClose();
+  const handleSubmit = async ({ name, phone }) => {
+    const newContact = contacts.some(contact => {
+      return contact.name === name;
+    });
+    if (!newContact) {
+      await createContact({ name, phone });
+      Notify.success(`The ${name} has been added to your contact list.`);
+      onClose();
+    } else {
+      Report.warning(
+        `${name}`,
+        "This user is already in the contact list.",
+        "Close"
+      );
+    }
   };
 
-  const reset = () => {
-    setName('');
-    setNumber('');
-  };
+  const contactSchema = yup.object({
+    name: yup.string().required().min(3).max(30),
+    phone: yup.number().required(),
+  });
 
   return (
-    <form className={css.form} onSubmit={handleSubmit}>
-      <label className={css.label}>
-        <span className={css.title}>Name</span>
-        <input
-          className={css.input}
-          onChange={onChangeName}
-          type="text"
-          name="name"
-          value={name}
-          pattern="^[a-zA-Zа-яА-Я]+(([' -][a-zA-Zа-яА-Я ])?[a-zA-Zа-яА-Я]*)*$"
-          title="Name may contain only letters, apostrophe, dash and spaces. For example Adrian, Jacob Mercer, Charles de Batz de Castelmore d'Artagnan"
-          required
-        />
-      </label>
-      <label className={css.label}>
-        <span className={css.title}>Number</span>
-        <input
-          className={css.input}
-          onChange={onChangeNumber}
-          type="tel"
-          name="number"
-          value={number}
-          pattern="\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}"
-          title="Phone number must be digits and can contain spaces, dashes, parentheses and can start with +"
-          required
-        />
-      </label>
-      <button className={css.button} type="submit">
-        Add
-      </button>
-    </form>
+    <Formik
+      initialValues={{ name: "", phone: "" }}
+      onSubmit={handleSubmit}
+      validationSchema={contactSchema}
+    >
+      {({ values, handleChange, handleSubmit }) => (
+        <Form className={css.form} onSubmit={handleSubmit}>
+          <label className={css.label}>
+            <span className={css.title}>Name</span>
+            <Field
+              className={css.input}
+              type="text"
+              name="name"
+              onChange={handleChange}
+              value={values.name}
+            />
+            <ErrorMessage name="name" component="div" />
+          </label>
+          <label className={css.label}>
+            <span className={css.title}>Number</span>
+            <Field
+              className={css.input}
+              type="tel"
+              name="phone"
+              onChange={handleChange}
+              value={values.phone}
+            />
+            <ErrorMessage name="phone" component="div" />
+          </label>
+          <button className={css.button} type="submit">
+            Add
+          </button>
+        </Form>
+      )}
+    </Formik>
   );
 }
 
