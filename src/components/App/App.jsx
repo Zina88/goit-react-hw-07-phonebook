@@ -1,8 +1,10 @@
 import { Routes, Route } from "react-router-dom";
+import { lazy, Suspense } from "react";
 import Header from "components/Header";
-import ContactsPage from "pages/ContactsPage";
-
 import css from "./App.module.css";
+import Loader from "components/Loader";
+
+const ContactsPage = lazy(() => import("pages/ContactsPage"));
 
 export default function App() {
   return (
@@ -11,9 +13,13 @@ export default function App() {
         <Header />
       </div>
 
-      <Routes>
-        <Route path="/" element={<ContactsPage />} />
-      </Routes>
+      <Suspense fallback={<Loader />}>
+        <Routes>
+          <Route path="/" element={<ContactsPage />} />
+
+          <Route path="*" element={<ContactsPage />} />
+        </Routes>
+      </Suspense>
     </div>
   );
 }
